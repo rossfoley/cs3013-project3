@@ -18,6 +18,7 @@ while(TRUE) {
 	// Code to get dressed and leave
 	down(mutex);
 	if (ninjaAccess && ninjasInRoom[ninjaID]) {
+		sleep(1); // Perform costume change
 		ninjas--;
 		ninjasInRoom[ninjaID] = FALSE;
 
@@ -43,6 +44,7 @@ while(TRUE) {
 	// Code to get dressed and leave
 	down(mutex);
 	if (pirateAccess && piratesInRoom[pirateID]) {
+		sleep(1); // Perform costume change
 		pirates--;
 		piratesInRoom[pirateID] = FALSE;
 		
