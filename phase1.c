@@ -76,5 +76,21 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	for (i=0; i < NINJA_COUNT; i++) {
+		status = pthread_join(ninjaThreads[i], NULL);
+		if (status != 0) {
+			printf("Error joining ninja #%d!\n", i);
+			exit(-1);
+		}
+	}
+
+	for (i=0; i < PIRATE_COUNT; i++) {
+		status = pthread_join(pirateThreads[i], NULL);
+		if (status != 0) {
+			printf("Error joining pirate #%d!\n", i);
+			exit(-1);
+		}
+	}
+
 	exit(0);
 }
