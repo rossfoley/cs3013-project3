@@ -59,7 +59,7 @@ void *run_car(void *carID) {
 		while (cars[id].position != cars[id].destination) {
 			if (cars[id].position >= -1) {
 				int nextMove, updatePreviousCars;
-				int i, deadlockCount, canMakeMove = TRUE, wontCauseDeadlock = TRUE;
+				int i, madeMove = FALSE, deadlockCount, canMakeMove = TRUE, wontCauseDeadlock = TRUE;
 				
 				if (cars[id].position == -1) {
 					nextMove = cars[id].source;
@@ -85,6 +85,8 @@ void *run_car(void *carID) {
 
 				if (canMakeMove && wontCauseDeadlock) {
 					cars[id].position++;
+					madeMove = TRUE;
+					printf("Car #%i just moved to position %i.\n", id, cars[id].position);
 					if (updatePreviousCars) {
 						// Loop through all cars
 						// If they have the same source
@@ -98,8 +100,15 @@ void *run_car(void *carID) {
 				}
 
 				sem_post(&quadrants[nextMove]);
+				if (madeMove) {
+					// Couldn't make a move, so let another car try
+					pthread_yield();
+				}
+
 			} else {
 				printf("Car #%i is still in line at %i with position %i.\n", id, cars[id].source, -1*cars[id].position);
+				// Still stuck in line, let another car try to move
+				pthread_yield();
 			}
 		}
 
