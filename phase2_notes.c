@@ -24,12 +24,9 @@
 #define SOUTH 2
 #define EAST 3
 
-sem_t quadrants[4];
+#define CARS 20
 
-struct quadrant {
-	sem_t available;
-	struct car myCar;
-};
+sem_t quadrants[4];
 
 struct car {
 	int id;
