@@ -53,13 +53,14 @@ void *run_car(void *carID) {
 
 		cars[id].source = source;
 		cars[id].destination = destination;
-		cars[id].position = postion;
+		cars[id].position = position;
 
 		printf("Car #%i given new orders. Source: %i, Destination: %i.\n", id, cars[id].source, cars[id].destination);
 		while (cars[id].position != cars[id].destination) {
 			if (cars[id].position >= -1) {
 				int nextMove, updatePreviousCars;
-				int canMakeMove = TRUE, wontCauseDeadlock = TRUE;
+				int i, deadlockCount, canMakeMove = TRUE, wontCauseDeadlock = TRUE;
+				
 				if (cars[id].position == -1) {
 					nextMove = cars[id].source;
 					updatePreviousCars = TRUE;
@@ -69,14 +70,13 @@ void *run_car(void *carID) {
 
 				sem_wait(&quadrants[nextMove]);
 
-				int i, deadlockCount, canMakeMove = TRUE;
 				for (i = 0; i < CARS; i++) {
-					canMakeMove &&= !(cars[i].position == nextMove);
+					canMakeMove = canMakeMove && !(cars[i].position == nextMove);
 				}
 				
 				for (i = 0; i < CARS; i++) {
 					if (cars[i].position >= 0 && i != id) {
-						deadlockCount += !!(cars[i].destination - cars[i].postion);
+						deadlockCount += !!(cars[i].destination - cars[i].position);
 					}	
 				}
 
