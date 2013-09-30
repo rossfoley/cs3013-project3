@@ -22,24 +22,28 @@
 
 #define CARS 20
 
-sem_t quadrants[4];
-
-pthread_t cars[CARS];
-
 struct car {
 	int id;
 	int destination;
 	int source;
 	int position;
 };
-void *run_car(void *id) {
+
+sem_t quadrants[4];
+
+pthread_t car_threads[CARS];
+
+struct car cars[CARS];
+
+void *run_car(void *carID) {
+	int id = (int) carID;
 	while (TRUE) {
 		// Generate source and destination for car
 		printf("Car #%i given new orders. Source: %i, Destination: %i.\n", id, cars[id].source, cars[id].destination);
 		while (cars[id].position != cars[id].destination) {
 			if (cars[id].position >= -1) {
 				int nextMove, updatePreviousCars;
-
+				int canMakeMove = TRUE, wontCauseDeadlock = TRUE;
 				if (cars[id].position == -1) {
 					nextMove = cars[id].source;
 					updatePreviousCars = TRUE;
@@ -63,7 +67,12 @@ void *run_car(void *id) {
 				printf("Car #%i is still in line at %i with position %i.\n", id, cars[id].source, -1*cars[id].position);
 			}
 		}
-		
+
 		printf("Car #%i has left the intersection at destination %i.\n", id, cars[id].destination);
 	}
+}
+
+int main(int argc, char *argv[]) {
+	printf("Hello and goodbye\n");
+	exit(0);
 }
