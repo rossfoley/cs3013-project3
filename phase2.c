@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -23,7 +24,6 @@
 #define CARS 20
 
 struct car {
-	int id;
 	int destination;
 	int source;
 	int position;
@@ -38,7 +38,23 @@ struct car cars[CARS];
 void *run_car(void *carID) {
 	int id = (int) carID;
 	while (TRUE) {
-		// Generate source and destination for car
+		int i, min, destination, position, source = rand() % 4;
+		do {
+			destination = rand() % 4;
+		} while (source == destination);
+		
+		for (i = 0; i < CARS; i++) {
+			if (cars[i].source == cars[id].source && cars[i].position < min) {
+				min = cars[i].position;
+			}
+		}
+
+		position = min - 1;
+
+		cars[id].source = source;
+		cars[id].destination = destination;
+		cars[id].position = postion;
+
 		printf("Car #%i given new orders. Source: %i, Destination: %i.\n", id, cars[id].source, cars[id].destination);
 		while (cars[id].position != cars[id].destination) {
 			if (cars[id].position >= -1) {
@@ -53,12 +69,31 @@ void *run_car(void *carID) {
 
 				sem_wait(&quadrants[nextMove]);
 
+				int i, deadlockCount, canMakeMove = TRUE;
+				for (i = 0; i < CARS; i++) {
+					canMakeMove &&= !(cars[i].position == nextMove);
+				}
+				
+				for (i = 0; i < CARS; i++) {
+					if (cars[i].position >= 0 && i != id) {
+						deadlockCount += !!(cars[i].destination - cars[i].postion);
+					}	
+				}
+
+				// If deadlockCount is 3, then letting the current car into the intersection will cause deadlock
+				wontCauseDeadlock = (deadlockCount < 3); 
+
 				if (canMakeMove && wontCauseDeadlock) {
 					cars[id].position++;
 					if (updatePreviousCars) {
 						// Loop through all cars
 						// If they have the same source
 						// And position < -1, do position++
+						for (i = 0; i < CARS; i++) {
+							if (cars[i].source == cars[id].source && cars[i].position < -1) {
+								cars[i].position++;
+							}
+						}
 					}
 				}
 
@@ -73,6 +108,25 @@ void *run_car(void *carID) {
 }
 
 int main(int argc, char *argv[]) {
-	printf("Hello and goodbye\n");
+	int i, status;
+
+	srand(time(NULL));
+
+	for (i=0; i < CARS; i++) {
+		status = pthread_create(&car_threads[i], NULL, run_car, (void *) i);
+		if (status != 0) {
+			printf("Error creating car #%d!\n", i);
+			exit(-1);
+		}
+	}
+
+	for (i=0; i < CARS; i++) {
+		status = pthread_join(car_threads[i], NULL);
+		if (status != 0) {
+			printf("Error joining car #%d!\n", i);
+			exit(-1);
+		}
+	}
+
 	exit(0);
 }
