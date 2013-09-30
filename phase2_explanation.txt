@@ -1,0 +1,4 @@
+Phase 1:
+In this situation, you would use a single mutex to control who is allowed to drive through the intersection.  The first person to arrive will lock the mutex and drive through all of the quadrants that they need and continue on their way. Once they are through the intersection, they unlock the mutex so that the next person to arrive can lock it.  This ensures that people can go in the order that they arrive.
+
+Phase 2:
