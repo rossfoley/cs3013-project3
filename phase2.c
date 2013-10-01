@@ -21,16 +21,15 @@
 #define SOUTH 2
 #define EAST 3
 
-#define CARS 3
+#define CARS 20
 
 struct car {
 	int destination;
 	int source;
 	int position;
+	pthread_mutex_t lock;
 };
 
-//sem_t quadrants[4];
-//sem_t check; 
 pthread_mutex_t quadrants[4];
 pthread_mutex_t check;
 
@@ -40,6 +39,9 @@ struct car cars[CARS];
 
 void *run_car(void *carID) {
 	int id = (int) carID;
+	
+	pthread_mutex_lock(&cars[id].lock);
+
 	while (TRUE) {
 		int i, posCount = -1, destination, position;
 		int source = rand() % 4;
@@ -54,24 +56,19 @@ void *run_car(void *carID) {
 		}
 
 		position = posCount;
-		//position = min - 1;
 
 		cars[id].source = source;
 		cars[id].destination = destination;
 		cars[id].position = position;
 
 		printf("Car #%i was given source %i, destination %i, and position %i.\n", id, cars[id].source, cars[id].destination, -1*cars[id].position);
-		sleep(2);
 
 		while (cars[id].position != cars[id].destination) {
 			if (cars[id].position >= -1 && cars[id].position <= 5) {
 				int nextMove, updatePreviousCars;
 				int i, madeMove = FALSE, deadlockCount = 0, canMakeMove = TRUE, wontCauseDeadlock = TRUE;
-				
-				//printf("Try unlock on check\n");
+
 				pthread_mutex_lock(&check);
-				//sem_wait(&check);
-				//printf("Unlock successful\n");
 
 				if (cars[id].position == -1) {
 					nextMove = (cars[id].source + 1) % 4;
@@ -81,12 +78,8 @@ void *run_car(void *carID) {
 				}
 
 				pthread_mutex_unlock(&check);
-				//sem_post(&check);
 
-				//printf("Try unlock on q %i\n", nextMove);
 				pthread_mutex_lock(&quadrants[nextMove]);
-				//sem_wait(&quadrants[nextMove]);
-				//printf("Unlock successful\n");
 
 				for (i = 0; i < CARS; i++) {
 					canMakeMove = canMakeMove && !(cars[i].position == nextMove);
@@ -94,10 +87,9 @@ void *run_car(void *carID) {
 				
 				for (i = 0; i < CARS; i++) {
 					if (cars[i].position >= 0 && cars[i].position <= 3 && i != id && cars[i].destination != cars[i].position) {
-						deadlockCount++; //!!(cars[i].destination - cars[i].position);
+						deadlockCount++;
 					}	
 				}
-				//printf("CanMakeMove: %i, deadlockCount: %i\n", canMakeMove, deadlockCount);
 
 				// If deadlockCount is 3, then letting the current car into the intersection will cause deadlock
 				wontCauseDeadlock = (deadlockCount < 3); 
@@ -106,7 +98,6 @@ void *run_car(void *carID) {
 					cars[id].position = nextMove;
 					madeMove = TRUE;
 					printf("Car #%i just moved to position %i.\n", id, cars[id].position);
-					sleep(2);
 					if (updatePreviousCars) {
 						// Loop through all cars
 						// If they have the same source
@@ -117,38 +108,43 @@ void *run_car(void *carID) {
 							}
 						}
 					}
+					for (i = 0; i < CARS; i++) {
+						if (cars[i].position >= -1 && cars[i].position <= 3 && i != id) {
+							pthread_mutex_unlock(&cars[i].lock);
+						}
+					}
 				}
 
 				pthread_mutex_unlock(&quadrants[nextMove]);
-				//sem_post(&quadrants[nextMove]);
 				
 				if (!madeMove) {
 					// Couldn't make a move, so let another car try
-					pthread_yield();
 				}
 
 			} else {
-				printf("Car #%i is still in line at %i with position %i.\n", id, cars[id].source, -1*cars[id].position);
+				printf("Car #%i is still in line at source %i with position %i.\n", id, cars[id].source, -1*cars[id].position);
 				// Still stuck in line, let another car try to move
-				sleep(2);
-				pthread_yield();
+				pthread_mutex_lock(&cars[id].lock);
 			}
 		}
 
 		printf("Car #%i has left the intersection at destination %i.\n", id, cars[id].destination);
-		sleep(2);
 	}
 }
 
 int main(int argc, char *argv[]) {
 	int i, status;
+	
+	for (i = 0; i < 4; i++) {
+		pthread_mutex_init(&quadrants[i], NULL);
+	}
+	pthread_mutex_init(&check, NULL);
 
 	srand(time(NULL));
 
 	for (i = 0; i < CARS; i++) {
 		cars[i].position = 5;
-		//cars[i].source = rand() % 4;
-		//cars[i].destination = (cars[i].source + (rand() % 3) + 1) % 4;
+		pthread_mutex_init(&cars[i].lock, NULL);
 	}
 
 	for (i=0; i < CARS; i++) {
