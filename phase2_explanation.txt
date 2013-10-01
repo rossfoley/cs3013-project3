@@ -2,3 +2,10 @@ Phase 1:
 In this situation, you would use a single mutex to control who is allowed to drive through the intersection.  The first person to arrive will lock the mutex and drive through all of the quadrants that they need and continue on their way. Once they are through the intersection, they unlock the mutex so that the next person to arrive can lock it.  This ensures that people can go in the order that they arrive.
 
 Phase 2:
+Our solution ensures that there is no car in the intersection quadrant at the same time as another by using mutexes for each quadrant. Each car looks to the mutex of its next move and checks if it can attain it. If it can, it checks that there is no car in that quadrant. Finally, it checks that moving into the space ahead will not cause deadlock. This is checked by making sure that there are not three cars in the intersection that are all not a move away exiting.
+
+Additionally, each car has a mutex that is locked if the car is waiting in line and unlocked when the car is first in line or is already in the quadrants. This prevents starvation of the cars in line. It also ensures maximum parallelism. 
+
+No cars are allowed to pass each other, as cars are only allowed to use quadrants that are on the right side of the road. Each car is guaranteed its own personal position in line. The only way the position in line moves is if the car ahead "pulls along" the car behind it after moving forward. 
+
+The intersection does not turn into a roundabout because no car relies on another cars moving simultaneously to prevent deadlock. 
